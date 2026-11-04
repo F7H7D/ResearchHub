@@ -1,0 +1,515 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ResearchHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'style.css' %}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Top navigation -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <a href="/" class="brand">
+            <span class="brand-mark"></span>
+            <span class="brand-text">ResearchHub</span>
+          </a>
+        </div>
+
+        <div class="topbar-right">
+          {% if user.is_authenticated %}
+          <div class="user-chip">
+            <span class="user-avatar">{{ user.username|slice:":1"|upper }}</span>
+            <span class="user-name">{{ user.username }}</span>
+          </div>
+          <form method="post" action="{% url 'logout' %}" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost btn-sm">Logout</button>
+          </form>
+          {% endif %}
+        </div>
+      </header>
+
+      <!-- Flash messages -->
+      {% if messages %}
+      <div class="messages-container">
+        {% for message in messages %}
+        <div class="toast toast-{{ message.tags|default:'info' }}">
+          <span class="toast-dot"></span>
+          <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <main class="main-content">
+        <!-- ==================== REGISTER ==================== -->
+        {% if page == 'register' %}
+        <div class="auth-layout">
+          <div class="auth-card">
+            <div class="auth-header">
+              <h1>Create Account</h1>
+              <p class="auth-sub">Start collaborating on private research projects.</p>
+            </div>
+
+            <form method="post" class="auth-form">
+              {% csrf_token %}
+              <div class="field">
+                <label for="reg-username">Username</label>
+                <input
+                  id="reg-username"
+                  name="username"
+                  placeholder="Choose a username"
+                  required
+                  autocomplete="username"
+                />
+              </div>
+              <div class="field">
+                <label for="reg-email">Email</label>
+                <input
+                  id="reg-email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  autocomplete="email"
+                />
+              </div>
+              <div class="field">
+                <label for="reg-password">Password</label>
+                <input
+                  id="reg-password"
+                  name="password"
+                  type="password"
+                  placeholder="Create a strong password"
+                  required
+                  autocomplete="new-password"
+                />
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">
+                Create Account
+              </button>
+            </form>
+
+            <p class="auth-footer">
+              Already have an account?
+              <a href="{% url 'login' %}">Login</a>
+            </p>
+          </div>
+        </div>
+
+        <!-- ==================== LOGIN ==================== -->
+        {% elif page == 'login' %}
+        <div class="auth-layout">
+          <div class="auth-card">
+            <div class="auth-header">
+              <h1>Welcome Back</h1>
+              <p class="auth-sub">Sign in to your research workspace.</p>
+            </div>
+
+            <form method="post" class="auth-form">
+              {% csrf_token %}
+              <div class="field">
+                <label for="login-username">Username</label>
+                <input
+                  id="login-username"
+                  name="username"
+                  placeholder="Username"
+                  required
+                  autocomplete="username"
+                />
+              </div>
+              <div class="field">
+                <label for="login-password">Password</label>
+                <input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  placeholder="Password"
+                  required
+                  autocomplete="current-password"
+                />
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">
+                Login
+              </button>
+            </form>
+
+            <p class="auth-footer">
+              Don’t have an account?
+              <a href="{% url 'register' %}">Create an account</a>
+            </p>
+          </div>
+        </div>
+
+        <!-- ==================== DASHBOARD ==================== -->
+        {% elif page == 'dashboard' %}
+        <div class="page-header">
+          <div>
+            <h1>Your Research Workspace</h1>
+            <p class="page-desc">
+              Create and collaborate on private research projects.
+            </p>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- New Project panel -->
+          <section class="panel panel-create">
+            <div class="panel-header">
+              <h2>New Project</h2>
+            </div>
+            <form method="post" class="create-form">
+              {% csrf_token %}
+              <div class="field">
+                <label for="project-title">Project title</label>
+                <input
+                  id="project-title"
+                  name="title"
+                  placeholder="e.g. Climate Modeling 2026"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="project-desc">Description</label>
+                <textarea
+                  id="project-desc"
+                  name="description"
+                  placeholder="What is this project about?"
+                  rows="3"
+                ></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Create Project
+              </button>
+            </form>
+          </section>
+
+          <!-- Projects list -->
+          <section class="panel panel-list">
+            <div class="panel-header">
+              <h2>Your Projects</h2>
+              <span class="badge badge-muted">
+                {{ projects|length }} project{{ projects|length|pluralize }}
+              </span>
+            </div>
+
+            <div class="item-list">
+              {% for project in projects %}
+              <a class="item-card" href="{% url 'project' project.id %}">
+                <div class="item-card-body">
+                  <strong class="item-title">{{ project.title }}</strong>
+                  {% if project.description %}
+                  <p class="item-desc">{{ project.description }}</p>
+                  {% endif %}
+                </div>
+                <span class="item-arrow">→</span>
+              </a>
+              {% empty %}
+              <div class="empty-state">
+                <div class="empty-icon">◈</div>
+                <p>No projects yet.</p>
+                <p class="empty-hint">Create your first project to get started.</p>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+
+        <!-- ==================== PROJECT ==================== -->
+        {% elif page == 'project' %}
+        <div class="page-nav">
+          <a href="/" class="back-link">← Dashboard</a>
+        </div>
+
+        <div class="page-header">
+          <div>
+            <h1>{{ project.title }}</h1>
+            {% if project.description %}
+            <p class="page-desc">{{ project.description }}</p>
+            {% endif %}
+          </div>
+          <div class="page-actions">
+            <a
+              class="btn btn-secondary"
+              href="{% url 'combined' project.id %}"
+            >
+              View Combined
+            </a>
+            <a
+              class="btn btn-primary"
+              href="{% url 'export_pdf' project.id %}"
+            >
+              Export PDF
+            </a>
+          </div>
+        </div>
+
+        <div class="project-layout">
+          {% if project.owner == user %}
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Invite a Friend</h2>
+            </div>
+            <form method="post" class="inline-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="invite" />
+              <div class="field-inline">
+                <input
+                  name="username"
+                  placeholder="Friend's username"
+                  required
+                />
+                <button type="submit" class="btn btn-secondary">Invite</button>
+              </div>
+            </form>
+          </section>
+          {% endif %}
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Submit Research</h2>
+            </div>
+            <form method="post" class="create-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="research" />
+              <div class="field">
+                <label for="research-title">Research title</label>
+                <input
+                  id="research-title"
+                  name="title"
+                  placeholder="Title of your research section"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="research-content">Content</label>
+                <textarea
+                  id="research-content"
+                  name="content"
+                  placeholder="Write your research..."
+                  required
+                  rows="6"
+                ></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Submit Research
+              </button>
+            </form>
+          </section>
+
+          <section class="panel panel-list">
+            <div class="panel-header">
+              <h2>Research Submissions</h2>
+            </div>
+
+            <div class="item-list">
+              {% for r in researches %}
+              <a
+                class="item-card"
+                href="{% url 'research_detail' r.id %}"
+              >
+                <div class="item-card-body">
+                  <div class="item-meta">
+                    <strong class="item-title">{{ r.title }}</strong>
+                    <span class="status-badge status-{{ r.status }}">
+                      {{ r.get_status_display }}
+                    </span>
+                  </div>
+                  <p class="item-desc">By {{ r.author.username }}</p>
+                </div>
+                <span class="item-arrow">→</span>
+              </a>
+              {% empty %}
+              <div class="empty-state">
+                <div class="empty-icon">◇</div>
+                <p>No research submitted yet.</p>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+
+        <!-- ==================== EDITOR / RESEARCH DETAIL ==================== -->
+        {% elif page == 'editor' %}
+        <div class="page-nav">
+          <a
+            href="{% url 'project' research.project.id %}"
+            class="back-link"
+          >
+            ← Project
+          </a>
+        </div>
+
+        <div class="page-header editor-header">
+          <div>
+            <h1>{{ research.title }}</h1>
+            <div class="editor-meta">
+              <span>Author: <strong>{{ research.author.username }}</strong></span>
+              <span class="status-badge status-{{ research.status }}">
+                {{ research.get_status_display }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {% if research.feedback %}
+        <section class="panel feedback-panel">
+          <div class="panel-header">
+            <h3>Reviewer Feedback</h3>
+          </div>
+          <div class="feedback-body">
+            {{ research.feedback|linebreaks }}
+          </div>
+        </section>
+        {% endif %}
+
+        {% if is_author %}
+          {% if research.status == 'draft' or research.status == 'changes' %}
+          <section class="panel">
+            <form method="post" class="editor-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="save" />
+              <div class="field">
+                <label for="edit-title">Title</label>
+                <input
+                  id="edit-title"
+                  name="title"
+                  value="{{ research.title }}"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="edit-content">Content</label>
+                <textarea
+                  id="edit-content"
+                  name="content"
+                  required
+                  rows="14"
+                >{{ research.content }}</textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-secondary">
+                  Save Draft
+                </button>
+              </div>
+            </form>
+
+            <form method="post" class="submit-form">
+              {% csrf_token %}
+              <button
+                type="submit"
+                name="action"
+                value="submit"
+                class="btn btn-primary"
+              >
+                Submit for Review
+              </button>
+            </form>
+          </section>
+          {% else %}
+          <div class="panel info-panel">
+            <p>Your research is awaiting review or has been approved.</p>
+          </div>
+          {% endif %}
+        {% else %}
+          <article class="panel content-panel">
+            {{ research.content|linebreaks }}
+          </article>
+
+          {% if research.status == 'submitted' %}
+          <section class="panel review-panel">
+            <div class="panel-header">
+              <h3>Review this submission</h3>
+            </div>
+            <form method="post" class="review-form">
+              {% csrf_token %}
+              <div class="field">
+                <label for="feedback">Reviewer comments</label>
+                <textarea
+                  id="feedback"
+                  name="feedback"
+                  placeholder="Provide constructive feedback..."
+                  rows="4"
+                ></textarea>
+              </div>
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  name="action"
+                  value="approve"
+                  class="btn btn-primary"
+                >
+                  Approve Research
+                </button>
+                <button
+                  type="submit"
+                  name="action"
+                  value="changes"
+                  class="btn btn-secondary"
+                >
+                  Request Changes
+                </button>
+              </div>
+            </form>
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- ==================== COMBINED ==================== -->
+        {% elif page == 'combined' %}
+        <div class="page-nav">
+          <a href="{% url 'project' project.id %}" class="back-link">
+            ← Project
+          </a>
+        </div>
+
+        <div class="page-header">
+          <div>
+            <h1>{{ project.title }} — Combined Research</h1>
+            <p class="page-desc">Approved research sections</p>
+          </div>
+          <div class="page-actions">
+            <a
+              class="btn btn-primary"
+              href="{% url 'export_pdf' project.id %}"
+            >
+              Download PDF
+            </a>
+          </div>
+        </div>
+
+        <div class="combined-list">
+          {% for r in researches %}
+          <article class="panel combined-card">
+            <div class="combined-header">
+              <h2>{{ r.title }}</h2>
+              <span class="combined-author">
+                Researcher: {{ r.author.username }}
+              </span>
+            </div>
+            <div class="combined-body">
+              {{ r.content|linebreaks }}
+            </div>
+          </article>
+          {% empty %}
+          <div class="empty-state large">
+            <div class="empty-icon">◈</div>
+            <p>No approved research sections yet.</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </main>
+    </div>
+
+    <script src="{% static 'app.js' %}"></script>
+  </body>
+</html>
